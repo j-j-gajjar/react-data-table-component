@@ -19,7 +19,6 @@ import NoData from './NoDataWrapper';
 import NativePagination from './Pagination';
 import useDidUpdateEffect from '../hooks/useDidUpdateEffect';
 import {
-	decorateColumns,
 	getColumnById,
 	getNumberOfPages,
 	getSortDirection,
@@ -27,10 +26,12 @@ import {
 	isEmpty,
 	isRowSelected,
 	recalculatePage,
+	findColumnIndexById,
 } from './util';
 import { defaultProps } from './defaultProps';
 import { createStyles } from './styles';
 import { Action, AllRowsAction, SingleRowAction, RowRecord, SortAction, TableProps, TableState } from './types';
+import useColumns from '../hooks/useColumns';
 
 function DataTable<T extends RowRecord>(props: TableProps<T>): JSX.Element {
 	const {
@@ -115,19 +116,19 @@ function DataTable<T extends RowRecord>(props: TableProps<T>): JSX.Element {
 		direction = defaultProps.direction,
 	} = props;
 
-	// decorate columns with additional metadata required by RDT
-	const columnsMemo = React.useMemo(() => decorateColumns<T>(columns), [columns]);
+	const { cols, dragOver, handleDragStart, handleDragEnter, handleDragOver, handleDragLeave } = useColumns(columns);
+
 	const defaultSortDirection = getSortDirection(defaultSortAsc);
 	const defaultSortColumn = React.useMemo(
-		() => getColumnById<T>(defaultSortFieldId, columnsMemo) || {},
-		[columnsMemo, defaultSortFieldId],
+		() => getColumnById<T>(defaultSortFieldId, cols) || {},
+		[cols, defaultSortFieldId],
 	);
 
 	// Run once
 	const initialState: TableState<T> = React.useMemo(
 		() => ({
-			allSelected: false,
 			rows: setRowData(data, defaultSortColumn?.selector, defaultSortDirection, sortServer, sortFunction),
+			allSelected: false,
 			selectedCount: 0,
 			selectedRows: [],
 			selectedColumn: defaultSortColumn,
@@ -244,6 +245,72 @@ function DataTable<T extends RowRecord>(props: TableProps<T>): JSX.Element {
 		return false;
 	};
 
+	// const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+	// 	const { id } = e.target as HTMLDivElement;
+
+	// 	// e.dataTransfer.setData('selectedColIndex', id);
+	// 	setSelectedColIndex(findColumnIndexById(cols, id));
+	// };
+
+	// const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+	// 	e.preventDefault();
+
+	// 	const dragOverColIdx = findColumnIndexById(cols, targetColId);
+
+	// 	const reorderedCols = [...cols];
+
+	// 	reorderedCols[selectedColIndex] = cols[dragOverColIdx];
+	// 	reorderedCols[dragOverColIdx] = cols[selectedColIndex];
+
+	// 	if (dragOverColIdx && dragOverColIdx >= 0 && dragOverColIdx != selectedColIndex) {
+	// 		dispatch({ type: 'UPDATE_COLUMNS', cols: reorderedCols });
+	// 		// console.log(selectedColIndex, dragOverColIdx);
+	// 	}
+
+	// 	// setDragOver(-1);
+	// };
+
+	const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+
+		// sB   B
+		// const { id } = e.target as HTMLDivElement;
+
+		// const droppedColIdx = findColumnIndexById(cols, id).toString();
+		// const draggedColIdx = e.dataTransfer.getData('selectedColIndex');
+		// const reorderedCols = [...cols];
+
+		// reorderedCols[draggedColIdx] = cols[droppedColIdx];
+		// reorderedCols[droppedColIdx] = cols[parseInt(draggedColIdx)];
+
+		// dispatch({ type: 'UPDATE_COLUMNS', cols: reorderedCols });
+
+		// setDragOver(-1);
+
+		// e.preventDefault();
+	};
+
+	// const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+	// 	const { id } = e.target as HTMLDivElement;
+	// 	setTargetColId(parseInt(id));
+
+	// 	// if (dragOverId && dragOverId > 0) {
+	// 	// 	const dragOverColIdx = findColumnIndexById(cols, dragOverId);
+
+	// 	// 	if (dragOverColIdx !== selectedColIndex) {
+	// 	// 		// console.log(selectedColIndex, dragOverColIdx);
+	// 	// 		const reorderedCols = [...cols];
+
+	// 	// 		reorderedCols[selectedColIndex] = cols[dragOverColIdx];
+	// 	// 		reorderedCols[dragOverColIdx] = cols[selectedColIndex];
+
+	// 	// 		if (reorderedCols[selectedColIndex].id !== cols[dragOverColIdx].id) {
+	// 	// 			// dispatch({ type: 'UPDATE_COLUMNS', cols: reorderedCols });
+	// 	// 		}
+	// 	// 	}
+	// 	// }
+	// };
+
 	// recalculate the pagination and currentPage if the rows length changes
 	if (pagination && !paginationServer && rows.length > 0 && calculatedRows.length === 0) {
 		const updatedPage = getNumberOfPages(rows.length, rowsPerPage);
@@ -359,7 +426,7 @@ function DataTable<T extends RowRecord>(props: TableProps<T>): JSX.Element {
 											/>
 										))}
 									{expandableRows && !expandableRowsHideExpander && <TableColExpander />}
-									{columnsMemo.map(column => (
+									{cols.map(column => (
 										<TableCol
 											key={column.id}
 											column={column}
@@ -375,6 +442,13 @@ function DataTable<T extends RowRecord>(props: TableProps<T>): JSX.Element {
 											sortIcon={sortIcon}
 											sortServer={sortServer}
 											onSort={handleSort}
+											draggable
+											onDragStart={handleDragStart}
+											onDragOver={handleDragOver}
+											onDragEnd={handleDragEnd}
+											onDragEnter={handleDragEnter}
+											onDragLeave={handleDragLeave}
+											dragOver={column.id === dragOver}
 										/>
 									))}
 								</TableHeadRow>
@@ -406,7 +480,7 @@ function DataTable<T extends RowRecord>(props: TableProps<T>): JSX.Element {
 											key={id}
 											keyField={keyField}
 											row={row}
-											columns={columnsMemo}
+											columns={cols}
 											selectableRows={selectableRows}
 											expandableRows={expandableRows}
 											expandableIcon={expandableIcon}
@@ -435,6 +509,7 @@ function DataTable<T extends RowRecord>(props: TableProps<T>): JSX.Element {
 											onRowClicked={handleRowClicked}
 											onRowDoubleClicked={handleRowDoubleClicked}
 											onSelectedRow={handleSelectedRow}
+											dragOverColumnId={dragOver}
 										/>
 									);
 								})}

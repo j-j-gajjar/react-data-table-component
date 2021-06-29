@@ -227,6 +227,7 @@ export interface ContextMessage {
 
 export type TableState<T> = {
 	allSelected: boolean;
+	cols: TableColumn<T>[];
 	contextMessage: ContextMessage;
 	rows: T[];
 	selectedCount: number;
@@ -371,6 +372,16 @@ export interface ClearSelectedRowsAction {
 export interface RowsAction<T> {
 	type: 'UPDATE_ROWS';
 	rows: T[];
+}
+
+export interface RowsAction<T> {
+	type: 'UPDATE_ROWS';
+	rows: T[];
+}
+
+export interface ColumnsAction<T> {
+	type: 'UPDATE_COLUMNS';
+	cols: TableColumn<T>[];
 }
 
 export type Action<T> =

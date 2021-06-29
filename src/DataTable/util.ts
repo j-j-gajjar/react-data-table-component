@@ -219,3 +219,13 @@ export function detectRTL(direction: Direction = Direction.AUTO): boolean {
 export function isOdd(num: number): boolean {
 	return num % 2 === 0;
 }
+
+export function findColumnIndexById<T>(columns: TableColumn<T>[], id: string | number): number {
+	return columns.findIndex(c => {
+		if (typeof c.id === 'number') {
+			return c.id === parseInt(id);
+		}
+
+		return c.id === id;
+	});
+}

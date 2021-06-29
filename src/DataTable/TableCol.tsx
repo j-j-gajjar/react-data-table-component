@@ -7,9 +7,12 @@ import { TableColumn, SortAction, SortDirection, SortFunction } from './types';
 
 const TableColStyle = styled(Cell)<CellProps>`
 	${({ button }) => button && 'text-align: center'};
+	${({ dragOver }) => dragOver && 'border: 1px solid red'};
+	// ${({ dragOver, width }) => dragOver && `transform: translateX(${width})`};
 `;
 
 interface ColumnSortableProps {
+	id: string | number;
 	disabled: boolean;
 	sortActive: boolean;
 	sortable: boolean | undefined;
@@ -71,6 +74,8 @@ type TableColProps<T> = {
 	rows: T[];
 	column: TableColumn<T>;
 	disabled: boolean;
+	dragOver: boolean;
+	draggable: boolean;
 	sortIcon?: React.ReactNode;
 	pagination: boolean;
 	paginationServer: boolean;
@@ -87,6 +92,8 @@ function TableCol<T>({
 	rows,
 	column,
 	disabled,
+	dragOver,
+	draggable,
 	selectedColumn,
 	sortDirection,
 	sortFunction,
@@ -97,6 +104,7 @@ function TableCol<T>({
 	persistSelectedOnSort,
 	selectableRowsVisibleOnly,
 	onSort,
+	...rest
 }: TableColProps<T>): JSX.Element | null {
 	React.useEffect(() => {
 		if (typeof column.selector === 'string') {
@@ -167,6 +175,7 @@ function TableCol<T>({
 
 	return (
 		<TableColStyle
+			id={column.id}
 			className="rdt_TableCol"
 			head
 			allowOverflow={column.allowOverflow}
@@ -179,10 +188,13 @@ function TableCol<T>({
 			right={column.right}
 			center={column.center}
 			width={column.width}
+			draggable={draggable}
+			dragOver={dragOver}
+			{...rest}
 		>
 			{column.name && (
 				<ColumnSortable
-					id={`column-${column.id}`}
+					// id={column.id}
 					role="columnheader"
 					tabIndex={0}
 					className="rdt_TableCol_Sortable"
@@ -194,7 +206,7 @@ function TableCol<T>({
 				>
 					{!disabled && customSortIconRight && renderCustomSortIcon()}
 					{!disabled && nativeSortIconRight && renderNativeSortIcon(sortActive)}
-					<ColumnText>{column.name}</ColumnText>
+					<ColumnText id={column.id}>{column.name}</ColumnText>
 					{!disabled && customSortIconLeft && renderCustomSortIcon()}
 					{!disabled && nativeSortIconLeft && renderNativeSortIcon(sortActive)}
 				</ColumnSortable>

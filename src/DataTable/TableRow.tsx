@@ -117,6 +117,7 @@ function TableRow<T extends RowRecord>({
 	selectableRowsSingle = false,
 	selected,
 	striped = false,
+	dragOverColumnId,
 }: TableRowProps<T>): JSX.Element {
 	const [expanded, setExpanded] = React.useState(defaultExpanded);
 
@@ -219,6 +220,7 @@ function TableRow<T extends RowRecord>({
 							dataTag={dataTag}
 							renderAsCell={!!column.cell}
 							column={column}
+							dragOver={dragOverColumnId === column.id}
 						>
 							{!column.cell && (
 								<div data-tag={dataTag}>{getProperty(row, column.selector, column.format, rowIndex)}</div>
